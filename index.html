@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .note {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+  </style>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <h1>Notas</h1>
+  <div>
+    <textarea id="noteContent" rows="4" cols="50"></textarea><br>
+    <button onclick="addNote()">Agregar Nota</button>
+  </div>
+  <h2>Todas las Notas</h2>
+  <div id="notes"></div>
+
+  <script>
+    const socket = io();
+
+    socket.on('newNote', (note) => {
+      addNoteToDOM(note);
+    });
+
+    async function fetchNotes() {
+      const response = await fetch('/api/notas');
+      const notes = await response.json();
+      const notesDiv = document.getElementById('notes');
+      notesDiv.innerHTML = '';
+      notes.forEach(note => {
+        addNoteToDOM(note);
+      });
+    }
+
+    function addNoteToDOM(note) {
+      const noteDiv = document.createElement('div');
+      noteDiv.className = 'note';
+      noteDiv.innerText = note.contenido;
+      document.getElementById('notes').appendChild(noteDiv);
+    }
+
+    async function addNote() {
+      const noteContent = document.getElementById('noteContent').value;
+      if (!noteContent.trim()) {
+        alert('La nota no puede estar vacía');
+        return;
+      }
+      const response = await fetch('/api/notas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ contenido: noteContent })
+      });
+      const newNote = await response.json();
+      document.getElementById('noteContent').value = '';
+      addNoteToDOM(newNote);
+    }
+
+    window.onload = fetchNotes;
+  </script>
+</body>
+</html>
